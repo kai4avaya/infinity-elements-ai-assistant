@@ -1,0 +1,42 @@
+{
+  "name": "samples",
+  "version": "1.0.0",
+  "description": "Web component samples",
+  "type": "module",
+  "scripts": {
+    "dev:dom-test": "vite --config vite.config.dom-test.ts",
+    "dev:api-demo": "vite --config vite.config.api-demo.ts",
+    "dev:oauth": "vite --config vite.config.oauth.ts",
+    "dev:inter-element-demo": "vite --config vite.config.inter-element-demo.ts",
+    "dev:consult-demo": "vite --config vite.config.consult-demo.ts",
+    "dev:agent-status-auto": "vite --config vite.config.agent-status-auto.ts",
+    "dev:ai-assistant": "vite --config vite.config.ai-assistant.ts",
+    "build:dom-test": "vite build --config vite.config.dom-test.ts",
+    "build:api-demo": "vite build --config vite.config.api-demo.ts",
+    "build:oauth": "vite build --config vite.config.oauth.ts",
+    "build:inter-element-demo": "vite build --config vite.config.inter-element-demo.ts",
+    "build:consult-demo": "vite build --config vite.config.consult-demo.ts",
+    "build:agent-status-auto": "vite build --config vite.config.agent-status-auto.ts",
+    "build:ai-assistant": "vite build --config vite.config.ai-assistant.ts",
+    "build-all": "node scripts/build-all.js"
+  },
+  "dependencies": {
+    "@avaya/infinity-elements-api": "^1.1.0-1",
+    "@r2wc/react-to-web-component": "^2.1.0",
+    "pdf-parse": "^1.1.1",
+    "pdfjs-dist": "^3.11.174",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-markdown": "^10.1.0",
+    "overtype": "^2.1.1"
+  },
+  "devDependencies": {
+    "@types/pdf-parse": "^1.1.1",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "@vitejs/plugin-react": "^5.1.1",
+    "typescript": "^5.3.0",
+    "vite": "^7.2.6",
+    "vite-plugin-css-injected-by-js": "^3.5.2"
+  }
+}

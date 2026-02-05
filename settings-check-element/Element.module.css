@@ -1,0 +1,142 @@
+.container {
+  padding: 20px;
+  font-family: system-ui, -apple-system, sans-serif;
+  height: 100%;
+  box-sizing: border-box;
+  overflow: auto;
+  background-color: #fff;
+}
+
+.title {
+  margin-top: 0;
+  color: #333;
+}
+
+.subtitle {
+  margin-top: 0;
+  margin-bottom: 10px;
+  color: #555;
+}
+
+.section {
+  margin-bottom: 20px;
+  padding: 15px;
+  border: 1px solid #ccc;
+  background: #f9f9f9;
+  border-radius: 4px;
+}
+
+.simulationSection {
+  background: #eef;
+}
+
+.list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 15px 0;
+}
+
+.list li {
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+
+.value {
+  word-break: break-all;
+  color: #000;
+}
+
+.helpText {
+  font-size: 11px;
+  color: #666;
+  margin-top: 4px;
+  font-style: italic;
+  padding-left: 5px;
+  border-left: 2px solid #ddd;
+}
+
+.button {
+  padding: 8px 16px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  cursor: pointer;
+  background-color: #f0f0f0;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+.button:hover {
+  background-color: #e0e0e0;
+}
+
+.buttonPrimary {
+  background-color: #2196F3;
+  color: white;
+  border: none;
+}
+
+.buttonPrimary:hover {
+  background-color: #1976D2;
+}
+
+.buttonStop {
+  background-color: #f44336;
+  color: white;
+  border: none;
+}
+
+.buttonStop:hover {
+  background-color: #d32f2f;
+}
+
+.buttonSuccess {
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+}
+
+.buttonSuccess:hover {
+  background-color: #388E3C;
+}
+
+.buttonGroup {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.logContainer {
+  font-family: monospace;
+  font-size: 12px;
+  color: #666;
+  padding: 10px;
+  background: #f5f5f5;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.alert {
+  margin: 10px 0;
+  padding: 10px;
+  border-radius: 4px;
+  font-size: 13px;
+}
+
+.alertWarning {
+  background-color: #fff3cd;
+  border: 1px solid #ffeeba;
+  color: #856404;
+}
+
+.alertSuccess {
+  background-color: #e8f5e9;
+  border: 1px solid #c8e6c9;
+  color: #2e7d32;
+}
+
+.instructionList {
+  margin: 5px 0;
+  padding-left: 20px;
+}
