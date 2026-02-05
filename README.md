@@ -131,6 +131,26 @@ The AI Assistant requires a backend endpoint for AI queries. For security, this 
 
 > **Note:** `config.ts` is gitignored and will not be committed. If you need the backend endpoint URL, reach out to the **showme Avaya team**.
 
+### Document Editor Templates (Quick-Insert)
+
+The Document Editor includes **6 pre-built templates** that auto-populate with customer/agent data from Infinity:
+
+| Template | Purpose |
+|----------|---------|
+| **Receipt Statement** | Transaction receipt with customer info, payment details |
+| **Letter Template** | Formal letter with customer name, agent signature |
+| **Meeting Notes** | Agenda, discussion points, action items |
+| **Customer Follow-Up** | Post-interaction summary with resolution |
+| **Case Update** | Case status report with current/next steps |
+| **Escalation Summary** | Issue summary for supervisor handoff |
+
+**To customize/add templates**: Edit the `insertTemplate()` function in `ai_assistant/DocumentEditor.tsx` (~line 143). The `templates` object contains all template strings with variable interpolation like `${customerName}`, `${agentName}`, `${interactionSubject}`, etc. Add new templates to the object and corresponding `<option>` elements in the template dropdown (~line 340).
+
+**Available template variables:**
+- Customer: `customerName`, `customerFirstName`, `customerEmail`, `customerPhone`, `customerAccount`
+- Agent: `agentName`, `agentTitle`, `agentEmail`, `agentStatus`
+- Interaction: `interactionSubject`, `interactionNotes`
+
 ## Important things to know from the Infinity Elements docs
 
 - **Elements run in sandboxed iframes** inside Infinity. This means:
