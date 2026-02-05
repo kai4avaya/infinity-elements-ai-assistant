@@ -83,6 +83,8 @@ npm install
 npm run dev:ai-assistant
 ```
 
+Then open your browser and navigate to **http://localhost:5173**
+
 This starts Vite with the AI Assistant-specific config.
 
 ### Build the AI Assistant sample
