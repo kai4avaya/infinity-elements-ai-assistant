@@ -28,7 +28,7 @@ Each sample lives in its own directory under `examples/Samples/`. Notable ones i
 
 ## AI Assistant sample
 
-**Location:** `examples/Samples/ai_assistant`
+**Location:** `ai_assistant` etc.
 
 This AI Assistant helps agents draft and send messages, manage documents, and query an AI backend for suggestions.
 
