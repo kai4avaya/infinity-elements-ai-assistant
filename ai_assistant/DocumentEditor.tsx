@@ -3,6 +3,18 @@ import OverType from "overtype";
 import styles from "./Element.module.css";
 import type { AgentInfo, CustomerInfo, InteractionInfo } from "./Element.types";
 
+// Custom Template Storage Keys
+const CUSTOM_TEMPLATES_DB_NAME = "AIAssistantDB";
+const CUSTOM_TEMPLATES_STORE_NAME = "customTemplates";
+const CUSTOM_TEMPLATES_LOCAL_KEY = "ai_assistant_custom_templates";
+
+interface CustomTemplate {
+  id: string;
+  name: string;
+  content: string;
+  createdAt: number;
+}
+
 interface StoredDocument {
   id: string;
   name: string;
@@ -36,6 +48,11 @@ export default function DocumentEditor({
   const [isAIRewriting, setIsAIRewriting] = useState(false);
   const [showSaveSuccess, setShowSaveSuccess] = useState(false);
   const [rewritePrompt, setRewritePrompt] = useState("");
+  const [customTemplates, setCustomTemplates] = useState<CustomTemplate[]>([]);
+  const [showCreateTemplateModal, setShowCreateTemplateModal] = useState(false);
+  const [newTemplateName, setNewTemplateName] = useState("");
+  const [newTemplateContent, setNewTemplateContent] = useState("");
+  const [storageAvailable, setStorageAvailable] = useState(true);
   const editorContainerRef = useRef<HTMLDivElement>(null);
   const editorRef = useRef<any>(null);
   const isProgrammaticUpdateRef = useRef(false);
@@ -70,6 +87,170 @@ export default function DocumentEditor({
 
     setContent(value);
   }, []);
+
+  // Initialize IndexedDB for custom templates
+  useEffect(() => {
+    if (!('indexedDB' in window)) {
+      console.log("[DocumentEditor] IndexedDB not available, using localStorage fallback");
+      // Load from localStorage fallback
+      const saved = localStorage.getItem(CUSTOM_TEMPLATES_LOCAL_KEY);
+      if (saved) {
+        try {
+          setCustomTemplates(JSON.parse(saved));
+        } catch (err) {
+          console.error("Failed to parse custom templates from localStorage:", err);
+        }
+      }
+      return;
+    }
+
+    const initDB = async () => {
+      try {
+        await loadCustomTemplates();
+      } catch (err) {
+        console.error("[DocumentEditor] Failed to initialize custom templates storage:", err);
+        setStorageAvailable(false);
+        // Fallback to localStorage
+        const saved = localStorage.getItem(CUSTOM_TEMPLATES_LOCAL_KEY);
+        if (saved) {
+          try {
+            setCustomTemplates(JSON.parse(saved));
+          } catch (e) {
+            console.error("Failed to parse custom templates from localStorage:", e);
+          }
+        }
+      }
+    };
+    initDB();
+  }, []);
+
+  const initCustomTemplatesDB = (): Promise<IDBDatabase> => {
+    return new Promise((resolve, reject) => {
+      const request = indexedDB.open(CUSTOM_TEMPLATES_DB_NAME, 2);
+
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => resolve(request.result);
+
+      request.onupgradeneeded = (event) => {
+        const db = (event.target as IDBOpenDBRequest).result;
+        if (!db.objectStoreNames.contains(CUSTOM_TEMPLATES_STORE_NAME)) {
+          const store = db.createObjectStore(CUSTOM_TEMPLATES_STORE_NAME, { keyPath: "id" });
+          store.createIndex("createdAt", "createdAt", { unique: false });
+        }
+      };
+    });
+  };
+
+  const loadCustomTemplates = async () => {
+    if (!storageAvailable || !('indexedDB' in window)) {
+      const saved = localStorage.getItem(CUSTOM_TEMPLATES_LOCAL_KEY);
+      if (saved) {
+        try {
+          setCustomTemplates(JSON.parse(saved));
+        } catch (err) {
+          console.error("Failed to parse custom templates:", err);
+        }
+      }
+      return;
+    }
+
+    try {
+      const db = await initCustomTemplatesDB();
+      const transaction = db.transaction(CUSTOM_TEMPLATES_STORE_NAME, "readonly");
+      const store = transaction.objectStore(CUSTOM_TEMPLATES_STORE_NAME);
+      const request = store.getAll();
+
+      request.onsuccess = () => {
+        const templates = request.result as CustomTemplate[];
+        setCustomTemplates(templates.sort((a, b) => b.createdAt - a.createdAt));
+      };
+      request.onerror = () => {
+        console.error("Failed to load custom templates:", request.error);
+      };
+    } catch (err) {
+      console.error("Failed to load custom templates from IndexedDB:", err);
+    }
+  };
+
+  const saveCustomTemplate = async (template: CustomTemplate) => {
+    if (!storageAvailable || !('indexedDB' in window)) {
+      // Fallback to localStorage
+      const updated = [...customTemplates, template];
+      localStorage.setItem(CUSTOM_TEMPLATES_LOCAL_KEY, JSON.stringify(updated));
+      setCustomTemplates(updated);
+      return;
+    }
+
+    try {
+      const db = await initCustomTemplatesDB();
+      const transaction = db.transaction(CUSTOM_TEMPLATES_STORE_NAME, "readwrite");
+      const store = transaction.objectStore(CUSTOM_TEMPLATES_STORE_NAME);
+      const request = store.add(template);
+
+      request.onsuccess = () => {
+        setCustomTemplates(prev => [...prev, template]);
+      };
+      request.onerror = () => {
+        console.error("Failed to save custom template:", request.error);
+      };
+    } catch (err) {
+      console.error("Failed to save custom template:", err);
+      // Fallback to localStorage
+      const updated = [...customTemplates, template];
+      localStorage.setItem(CUSTOM_TEMPLATES_LOCAL_KEY, JSON.stringify(updated));
+      setCustomTemplates(updated);
+    }
+  };
+
+  const deleteCustomTemplate = async (templateId: string) => {
+    if (!storageAvailable || !('indexedDB' in window)) {
+      const updated = customTemplates.filter(t => t.id !== templateId);
+      localStorage.setItem(CUSTOM_TEMPLATES_LOCAL_KEY, JSON.stringify(updated));
+      setCustomTemplates(updated);
+      return;
+    }
+
+    try {
+      const db = await initCustomTemplatesDB();
+      const transaction = db.transaction(CUSTOM_TEMPLATES_STORE_NAME, "readwrite");
+      const store = transaction.objectStore(CUSTOM_TEMPLATES_STORE_NAME);
+      const request = store.delete(templateId);
+
+      request.onsuccess = () => {
+        setCustomTemplates(prev => prev.filter(t => t.id !== templateId));
+      };
+      request.onerror = () => {
+        console.error("Failed to delete custom template:", request.error);
+      };
+    } catch (err) {
+      console.error("Failed to delete custom template:", err);
+      const updated = customTemplates.filter(t => t.id !== templateId);
+      localStorage.setItem(CUSTOM_TEMPLATES_LOCAL_KEY, JSON.stringify(updated));
+      setCustomTemplates(updated);
+    }
+  };
+
+  // Handle Create Template
+  const handleCreateTemplate = () => {
+    if (!newTemplateName.trim() || !newTemplateContent.trim()) return;
+
+    const template: CustomTemplate = {
+      id: `custom-${Date.now()}`,
+      name: newTemplateName.trim(),
+      content: newTemplateContent,
+      createdAt: Date.now(),
+    };
+
+    void saveCustomTemplate(template);
+    setNewTemplateName("");
+    setNewTemplateContent("");
+    setShowCreateTemplateModal(false);
+  };
+
+  const handleOpenCreateTemplateModal = () => {
+    setShowCreateTemplateModal(true);
+    setNewTemplateContent(content); // Pre-fill with current editor content
+  };
 
   // Handle Rewrite with AI
   const handleRewrite = async () => {
@@ -259,11 +440,14 @@ Prepared by: ${agentName}
     };
 
     const template = templates[templateName];
+    // Check for custom templates
+    const customTemplate = customTemplates.find(t => t.id === templateName);
+    const finalTemplate = template || customTemplate?.content;
     const textarea = getEditorTextarea();
-    if (template && textarea) {
+    if (finalTemplate && textarea) {
       const start = textarea.selectionStart;
       const end = textarea.selectionEnd;
-      const newContent = content.substring(0, start) + template + content.substring(end);
+      const newContent = content.substring(0, start) + finalTemplate + content.substring(end);
       updateEditorValue(newContent);
     }
   };
@@ -343,7 +527,19 @@ Prepared by: ${agentName}
             <option value="followUp">Customer Follow-Up</option>
             <option value="caseUpdate">Case Update</option>
             <option value="escalation">Escalation Summary</option>
+            {customTemplates.map(template => (
+              <option key={template.id} value={template.id}>
+                {template.name}
+              </option>
+            ))}
           </select>
+          <button
+            onClick={handleOpenCreateTemplateModal}
+            className={styles.createTemplateLink}
+            title="Create a custom template"
+          >
+            + Create a template
+          </button>
           <button
             onClick={handleSave}
             disabled={!documentName.trim() || !content.trim()}
@@ -400,6 +596,69 @@ Prepared by: ${agentName}
         </span>
         <span className={styles.characterCount}>{content.length} characters</span>
       </div>
+
+      {/* Create Template Modal */}
+      {showCreateTemplateModal && (
+        <div className={styles.modalOverlay} onClick={() => setShowCreateTemplateModal(false)}>
+          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h3>Create Custom Template</h3>
+              <button
+                className={styles.modalClose}
+                onClick={() => setShowCreateTemplateModal(false)}
+                aria-label="Close modal"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
+            </div>
+            <div className={styles.modalBody}>
+              <div className={styles.modalField}>
+                <label htmlFor="templateName">Template Name</label>
+                <input
+                  id="templateName"
+                  type="text"
+                  value={newTemplateName}
+                  onChange={(e) => setNewTemplateName(e.target.value)}
+                  placeholder="e.g., Support Response, Invoice Template..."
+                  className={styles.modalInput}
+                />
+              </div>
+              <div className={styles.modalField}>
+                <label htmlFor="templateContent">Template Content</label>
+                <textarea
+                  id="templateContent"
+                  value={newTemplateContent}
+                  onChange={(e) => setNewTemplateContent(e.target.value)}
+                  placeholder="Enter template content with variables like ${customerName}, ${agentName}, etc."
+                  className={styles.modalTextarea}
+                  rows={8}
+                />
+              </div>
+              <p className={styles.modalHint}>
+                New templates will appear in the "Insert Template" dropdown after creation.
+              </p>
+            </div>
+            <div className={styles.modalFooter}>
+              <button
+                className={styles.modalCancelButton}
+                onClick={() => setShowCreateTemplateModal(false)}
+              >
+                Cancel
+              </button>
+              <button
+                className={styles.modalSaveButton}
+                onClick={handleCreateTemplate}
+                disabled={!newTemplateName.trim() || !newTemplateContent.trim()}
+              >
+                Save Template
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
