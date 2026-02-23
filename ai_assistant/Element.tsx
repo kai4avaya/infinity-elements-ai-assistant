@@ -264,16 +264,64 @@ export default function Element() {
       }
     });
 
+    // Helper function to extract text from a message (from Infinity API docs)
+    const getMessageText = (msg: any): string => {
+      if (typeof msg.message === 'string') {
+        return msg.message;
+      }
+      // Handle rich content array
+      if (Array.isArray(msg.message)) {
+        return msg.message
+          .map((part: any) => {
+            if (part.type === 'text') return part.text;
+            if (part.type === 'email' && part.email) return part.email.plainText;
+            return ''; // Skip other types (images, etc.)
+          })
+          .join(' ')
+          .trim();
+      }
+      return '';
+    };
+
     const unsubscribeFeedMessage = api.onReceivedFeedMessage((message: any) => {
       console.log("Received feed message:", message);
+      console.log("Feed message keys:", Object.keys(message || {}));
+      
+      // Log the full message structure for debugging
+      console.log("Feed message structure:", JSON.stringify(message, null, 2));
+      
+      // Extract text using the documented approach
+      const messageText = getMessageText(message);
+      
+      // Get sender from various possible display name fields (leave blank if not found)
+      const sender = message.author?.displayName || 
+                     message.author?.details?.displayName || 
+                     message.displayNameOverride || 
+                     "";
+      
+      // Determine message type based on direction field (most reliable)
+      // direction: "in" = incoming from customer, "out" = outgoing from agent
+      let messageType: "customer" | "agent" | "system" = "agent";
+      
+      if (message.direction === "in") {
+        messageType = "customer";
+      } else if (message.direction === "out") {
+        if (message.isPrivate) {
+          messageType = "system";
+        } else {
+          messageType = "agent";
+        }
+      }
+      
       // Add new message to conversation
       const newMessage: ConversationMessage = {
         id: `msg-${Date.now()}`,
         timestamp: Date.now(),
-        from: message.from || "Unknown",
-        text: message.text || message.content || "",
-        type: message.from === "customer" ? "customer" : "agent",
+        from: sender,
+        text: messageText,
+        type: messageType,
       };
+      console.log("Created conversation message:", newMessage);
       setConversation(prev => [...prev, newMessage]);
     });
 
@@ -695,32 +743,11 @@ const getAllDocuments = () => {
   };
 
 const loadConversationHistory = async (interactionId: string) => {
-  // This would need to be implemented based on available Infinity APIs
-  // For now, we'll simulate with some sample data
-  const sampleMessages: ConversationMessage[] = [
-    {
-      id: "msg-1",
-      timestamp: Date.now() - 300000,
-      from: "customer",
-      text: "Hi, I'm having trouble with my account login",
-      type: "customer",
-    },
-    {
-      id: "msg-2",
-      timestamp: Date.now() - 240000,
-      from: "agent",
-      text: "Hello! I'd be happy to help you with your login issue. Can you please verify your account number?",
-      type: "agent",
-    },
-    {
-      id: "msg-3",
-      timestamp: Date.now() - 180000,
-      from: "customer",
-      text: "My account number is 12345-67890",
-      type: "customer",
-    },
-  ];
-  setConversation(sampleMessages);
+  // The Infinity Elements API does not provide a transcript endpoint.
+  // Conversation history is built in real-time via onReceivedFeedMessage().
+  // Reset to empty so we start fresh for each new interaction.
+  console.log("[AI Assistant] loadConversationHistory called for interaction:", interactionId);
+  setConversation([]);
 };
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -1420,6 +1447,7 @@ ${documentContext}
           isReady={isReady}
           open={showDiagnostics}
           onToggle={() => setShowDiagnostics((prev) => !prev)}
+          liveConversation={conversation}
         />
       </div>
       <div className={styles.content}>
@@ -1443,6 +1471,19 @@ ${documentContext}
                 </button>
               </div>
               <div className={styles.conversationPanelContent}>
+                <button
+                  onClick={() => {
+                    handleNewConversation();
+                    setShowConversationPanel(false);
+                  }}
+                  className={styles.newConversationButton}
+                  aria-label="Start new conversation"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 5v14M5 12h14" />
+                  </svg>
+                  New Message
+                </button>
                 <div className={styles.conversationList}>
                   {savedConversations.length === 0 ? (
                     <div className={styles.emptyConversations}>No saved conversations</div>
